@@ -1,0 +1,5 @@
+project_id = "example-project-id"
+bucket_name = "my-unique-bucket-name"
+log_bucket_name = "my-log-bucket-name"
+location = "US"
+storage_class = "NEARLINE"

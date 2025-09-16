@@ -1,0 +1,4 @@
+strict digraph G {
+	"google_storage_bucket.cost_optimized" [ shape=ellipse ];
+
+}
