@@ -2,6 +2,10 @@ name: Terraform Plan with Inkdrop
 on:
   pull_request:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   plan:
     runs-on: ubuntu-latest
