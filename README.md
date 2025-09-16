@@ -10,6 +10,8 @@ This configuration creates a Google Cloud Storage bucket with cost-optimized set
 - Lifecycle rules:
   - Transition objects to COLDLINE after 30 days
   - Delete objects after 365 days
+ 
+![Inkdrop Diagram](...)
 
 ## Usage
 
@@ -34,3 +36,7 @@ module "gcs_bucket" {
 ## Outputs
 - `bucket_name`: Name of the bucket
 - `bucket_url`: URL of the bucket
+
+
+
+created by cloudgo.ai
