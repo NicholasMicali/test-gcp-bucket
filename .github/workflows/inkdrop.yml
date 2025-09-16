@@ -1,6 +1,11 @@
 name: Terraform Plan with Inkdrop
+
 on:
   pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   plan:
@@ -9,15 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.6
-
-      - name: Terraform Init and Plan
+      # If your plan.out already exists at the repo root (as you said),
+      # you can skip terraform init/plan and just upload it.
+      - name: Verify plan artifact exists
         run: |
-          terraform init
-          terraform plan -out=plan.out
+          test -f plan.out || (echo "plan.out not found at repo root" && exit 1)
 
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
@@ -27,8 +28,11 @@ jobs:
 
   visualize:
     needs: plan
-    uses: inkdrop-org/inkdrop-visualizer/.github/workflows/inkdrop-plan.yml@v2
+    # Docs show @v2, but the repo exposes v1.x tags; pin to main or a concrete tag like v1.1.49.
+    # Ref: https://docs.inkdrop.ai/... (example uses @v2); repo tags show only v1.x.
+    uses: inkdrop-org/inkdrop-visualizer/.github/workflows/inkdrop-plan.yml@main
     with:
       terraform_version: 1.6.6
       plan_artifact: terraform-plan
       plan_file_name: plan.out
+      # diagram_readme: true   # uncomment if you also want it to update README
