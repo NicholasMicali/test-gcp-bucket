@@ -34,3 +34,7 @@ module "gcs_bucket" {
 ## Outputs
 - `bucket_name`: Name of the bucket
 - `bucket_url`: URL of the bucket
+
+
+
+created by cloudgo.ai
