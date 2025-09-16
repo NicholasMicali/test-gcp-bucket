@@ -1,44 +1,58 @@
-name: Terraform Plan with Inkdrop
+name: Terraform Plan with Inkdrop (Docker)
 
 on:
   pull_request:
 
-# Needed so the reusable workflow can push the inkdrop-ci-data branch
-# and post PR comments.
 permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: inkdrop-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  plan:
+  render-inkdrop:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Your plan.out is already committed at the repo root
-      - name: Verify plan artifact exists
+      - name: Verify plan.out exists at repo root
+        run: test -f plan.out || (echo "plan.out not found at repo root" && exit 1)
+
+      - name: Render SVG via Inkdrop Docker
         run: |
-          test -f plan.out || (echo "plan.out not found at repo root" && exit 1)
+          # Inkdrop wants to run from the TF root. We mount the repo to /tfroot
+          docker run --rm \
+            -v "$PWD:/tfroot" \
+            -w /tfroot \
+            inkdroporg/inkdrop:latest \
+            plan.out --ci --debug
 
-      - name: Upload Plan Artifact
+          # The CLI writes an SVG in the working directory; ensure we have it
+          ls -l | grep -E '\.svg$' || (echo "No SVG produced" && exit 1)
+
+      - name: Upload diagram artifact
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-plan
-          path: plan.out
+          name: inkdrop-diagram
+          path: ./*.svg
 
-  visualize:
-    needs: plan
-    # Skip if PR comes from a fork, since GITHUB_TOKEN is read-only on forked PRs.
-    if: ${{ github.event.pull_request.head.repo.fork == false }}
-    # Pin to a valid ref: use a concrete v1.x tag or main.
-    # Docs show @v2, but the repo currently publishes v1.x and main.
-    uses: inkdrop-org/inkdrop-visualizer/.github/workflows/inkdrop-plan.yml@main
-    with:
-      terraform_version: 1.6.6
-      plan_artifact: terraform-plan
-      plan_file_name: plan.out
+      - name: Comment SVG on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const svgs = fs.readdirSync(process.cwd()).filter(f => f.endsWith('.svg'));
+            if (svgs.length === 0) {
+              core.setFailed('No SVGs found to comment'); return;
+            }
+            const body = [
+              '### Inkdrop Diagram',
+              '',
+              ...svgs.map(f => `<details><summary>${f}</summary>\n\n<img src="https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${context.payload.pull_request.head.sha}/${f}" alt="${f}" />\n\n</details>`),
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
