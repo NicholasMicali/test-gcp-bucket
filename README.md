@@ -10,6 +10,8 @@ This configuration creates a Google Cloud Storage bucket with cost-optimized set
 - Lifecycle rules:
   - Transition objects to COLDLINE after 30 days
   - Delete objects after 365 days
+ 
+![inkdrop](https://github.com/NicholasMicali/test-gcp-bucket/blob/main/inkdrop-diagram_25-09-16_19.25.27.svg)
 
 ## Usage
 
